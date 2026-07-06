@@ -1,35 +1,50 @@
-﻿const STORAGE_KEY = "moraghebeh_v1";
+﻿const STORAGE_KEY = "moraghebeh_v2";
 
-function getHabits() {
+function loadHabits() {
 
     const data = localStorage.getItem(STORAGE_KEY);
 
-    if (data) {
-        return JSON.parse(data);
+    if (!data) {
+
+        return [];
+
     }
 
-    return [];
+    try {
+
+        return JSON.parse(data);
+
+    } catch {
+
+        return [];
+
+    }
 
 }
 
 function saveHabits(habits) {
 
     localStorage.setItem(
+
         STORAGE_KEY,
+
         JSON.stringify(habits)
+
     );
 
 }
 
 function createHabit(name) {
 
-    const habits = getHabits();
+    const habits = loadHabits();
 
     habits.push({
 
         id: Date.now(),
 
         name: name,
+
+        createdAt: new Date().toISOString(),
 
         history: {}
 
@@ -39,11 +54,23 @@ function createHabit(name) {
 
 }
 
-function addResult(id, positive) {
+function getTodayKey() {
 
-    const habits = getHabits();
+    return new Date().toLocaleDateString("fa-IR");
 
-    const today = new Date().toLocaleDateString("fa-IR");
+}
+
+function findHabit(id) {
+
+    const habits = loadHabits();
+
+    return habits.find(h => h.id == id);
+
+}function addPositive(id) {
+
+    const habits = loadHabits();
+
+    const today = getTodayKey();
 
     habits.forEach(habit => {
 
@@ -61,15 +88,7 @@ function addResult(id, positive) {
 
             }
 
-            if (positive) {
-
-                habit.history[today].positive++;
-
-            } else {
-
-                habit.history[today].negative++;
-
-            }
+            habit.history[today].positive++;
 
         }
 
@@ -79,13 +98,43 @@ function addResult(id, positive) {
 
 }
 
-function getPercent(habit) {
+function addNegative(id) {
+
+    const habits = loadHabits();
+
+    const today = getTodayKey();
+
+    habits.forEach(habit => {
+
+        if (habit.id == id) {
+
+            if (!habit.history[today]) {
+
+                habit.history[today] = {
+
+                    positive: 0,
+
+                    negative: 0
+
+                };
+
+            }
+
+            habit.history[today].negative++;
+
+        }
+
+    });
+
+    saveHabits(habits);
+
+}function calculateTotals(habit){
 
     let positive = 0;
 
     let negative = 0;
 
-    Object.values(habit.history).forEach(day => {
+    Object.values(habit.history).forEach(day=>{
 
         positive += day.positive;
 
@@ -95,8 +144,42 @@ function getPercent(habit) {
 
     const total = positive + negative;
 
-    if (total == 0) return 0;
+    let percent = 0;
 
-    return Math.round((positive / total) * 100);
+    if(total>0){
+
+        percent = Math.round(
+
+            positive / total * 100
+
+        );
+
+    }
+
+    return{
+
+        positive,
+
+        negative,
+
+        total,
+
+        percent
+
+    };
+
+}
+
+function deleteHabit(id){
+
+    let habits = loadHabits();
+
+    habits = habits.filter(
+
+        h=>h.id!=id
+
+    );
+
+    saveHabits(habits);
 
 }
